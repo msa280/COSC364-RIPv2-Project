@@ -1,7 +1,7 @@
 '''
     COSC364 (RIP Assignment)
     Authors: Haider Saeed, Drogo Shi
-    Date: 07/01/2022
+    Date: 07/03/2022
     
     Program Definition: Configures RIP routing protocol based on the specifications
                       outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
@@ -197,11 +197,6 @@ def main():
     """ This is the main function which runs the routing protocol. """
     
     router1 = Configure("router1.txt")
-    router1.read_and_process_file()
-    
-    
-    
-    
-    
+    router1.read_and_process_file()    
 
 main()
