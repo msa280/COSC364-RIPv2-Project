@@ -1,3 +1,4 @@
+[Router_Info]
 router_id: 7
 input_ports: 1503, 4003
 outputs: 7001-8-1, 7002-6-4
