@@ -1,0 +1,5 @@
+router_id: 5
+input_ports: 4002, 6002
+outputs: 5001-2-4, 5002-1-6
+periodic_time: 30
+time_out: 180

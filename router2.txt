@@ -1,0 +1,5 @@
+router_id: 2
+input_ports: 1501, 3001
+outputs: 2001-1-1, 2002-3-3
+periodic_time: 30
+time_out: 180
