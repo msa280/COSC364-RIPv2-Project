@@ -1,3 +1,4 @@
+[Router_Info]
 router_id: 4
 input_ports: 3002, 7002, 5001
 outputs: 4001-4-3, 4002-2-5, 4003-6-7
