@@ -335,6 +335,7 @@ def process_entry(entry, rip_id_sent_from):
         cost = min(TABLE.get(router_id)[1], TABLE.get(rip_id_sent_from)[1]+metric)
         TABLE.get(router_id)[1] = cost
         TABLE.get(router_id)[3] = True
+        
     else:
         cost = min(16, TABLE.get(rip_id_sent_from)[1]+metric)
         TABLE[router_id] = [None, cost, rip_id_sent_from,False, [start_time_out(router_id),threading.Timer(20, delet_router,(router_id,))]]
@@ -346,6 +347,9 @@ def recived_update_router(rip_id_sent_from):
     timeout_timer = TABLE.get(rip_id_sent_from)[4][0]
     timeout_timer.cancel() #means the router not time out 
     TABLE.get(rip_id_sent_from)[4][0] = start_time_out(rip_id_sent_from) #restart timing for time out
+    
+    TABLE.get(router_id)[4][1].cancel() #cancel garbage timer not care if it started 
+    TABLE.get(router_id)[4][1] = threading.Timer(20, delet_router,(router_id,)) #create new garbage timer but it not started    
     print("----------reset time out timer----------")
     print()
     
