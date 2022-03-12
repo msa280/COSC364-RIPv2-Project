@@ -13,8 +13,10 @@ import time
 import socket
 import select
 import threading    # use timer here so sys load will not affect the time
+import random
 
 TABLE = {}                  #routing table 
+Neighbour = []            #contain all neighbour router id
 Sending_socket = None       #choise one of input port as Sending socket
 Router_id_self = None       #router id of this instance
 LOCAL_HOST = '127.0.0.1'
@@ -183,29 +185,48 @@ class Configure():
     
 def print_msg(message):
     """ Prints the message and the time at which it was sent. """
-    
     current_time = time.strftime("%Hh:%Mm:%Ss")
     print("[" + current_time + "]: " + message)
     
         
 def start_time_out(router_id):
     """start a time out timer for a entry in routing table"""
-    t = threading.Timer(10, not_reciving,(router_id,)) #for every 10s will call not_reciving func
+    t = threading.Timer(30, after_timeout,(router_id,)) #for every 180 will call not_reciving func
     t.start()                             #start the thread
     return t
-    
-def not_reciving(router_id):
-    """ NEED IMP LATER"""
-    # for later implement when time out happend
+
+def after_timeout(router_id):
+    """need to solve if all table is empty_________________________"""
+    #after timeout the router change metric of that entry and trigger updates 
     print("time out for {}!!!!!!!!!!!!".format(router_id))
-    print()
+    print()    
+    entry = TABLE.get(router_id)
+    entry[1] = 16  #metic to 16
+    entry[3] = True #change flag
+    send_packet_to_neighbour() #trigger updates
+    set_garbage_timer(router_id) #start a garbage timer
+    entry[4][0].cancel() #close the timeout timer
+    
+def set_garbage_timer(router_id):
+    #start a garbage timer
+    TABLE.get(router_id)[4][1].start()
+
+    
+def delet_router(router_id):
+    #upon garbage time it will pop the router
+    poped_router = TABLE.pop(router_id)
+    print("------{} has been deleted from the routing table".format(poped_router))
+    print_routing_table()
     
 def create_routing_table(neighbours):
     """{'router_id': 2, 'port': 1501, 'cost': 1} ==> dictionary 
-        dst_rt_id: port_num, metric, next_hop_id, flag, timer"""
+        dst_rt_id: port_num, metric, next_hop_id, flag, [timeout, garbage_timer]"""
     global TABLE
+    global Neighbour
     for neighbour in neighbours:
-        TABLE[neighbour['router_id']] = [neighbour['port'],neighbour['cost'], neighbour['router_id'], False, [start_time_out(neighbour['router_id'])]] #flag and timer later implment
+        router_id = neighbour['router_id']
+        TABLE[router_id] = [neighbour['port'],neighbour['cost'], router_id, False, [start_time_out(router_id),threading.Timer(20, delet_router,(router_id,))]] #flag and timer later implment
+        Neighbour.append(router_id) #create a global neighbour rout id list
     print("------------Global routing table has created------------")
         
 def create_rip_packet(send_to_neighbour_id):
@@ -222,6 +243,8 @@ def create_rip_packet(send_to_neighbour_id):
     if len(TABLE) > 20:
         return 
     for dst_router_id, values in TABLE.items():
+        if dst_router_id == send_to_neighbour_id:
+            continue
         #address Family 0
         packet.append(0)
         packet.append(0)
@@ -275,7 +298,7 @@ def recive_packet(packet):
         print("wrong header format-----------------")
         return
     len_packet = len(packet)
-    
+    rip_id_sent_from = (int(packet[:4][2] & 0xFF)) + int((packet[:4][3] << 8))
     print("----------packet header check pass----------")
     print() 
     
@@ -287,24 +310,36 @@ def recive_packet(packet):
     print()    
     #process entry
     for entry_start_index in range(4,len_packet,24):
-        process_entry(packet[entry_start_index:entry_start_index+24])
+        process_entry(packet[entry_start_index:entry_start_index+24],rip_id_sent_from)
     print("-----------------end process packet-----------------")
     print()
         
-        
+def print_routing_table():
+    print("dst----------metric----------next_hop")
+    for router_id, keys in TABLE.items():
+        metric = keys[1]
+        next_hop = keys[2]
+        print("{}{:13}{:16}".format(router_id, metric, next_hop))
 
-def process_entry(entry):
-    """NEED IMP LATER FOR CHANGE TABLE"""
+def process_entry(entry, rip_id_sent_from):
+    """NEED IMP LATER FOR CHANGE TABLE when recive cost 16"""
     #router_id
     router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
     #metric
     metric = int(entry[19])
     #next_hop   
     next_hop = (int(entry[22] & 0xFF)) + int((entry[23] << 8))
-  
-    print("dst----------metric----------next_hop")
-    print("{}{:13}{:16}".format(router_id, metric, next_hop))
-    print()
+    
+    #change metric of the table
+    if TABLE.get(router_id):
+        cost = min(TABLE.get(router_id)[1], TABLE.get(rip_id_sent_from)[1]+metric)
+        TABLE.get(router_id)[1] = cost
+        TABLE.get(router_id)[3] = True
+    else:
+        cost = min(16, TABLE.get(rip_id_sent_from)[1]+metric)
+        TABLE[router_id] = [None, cost, rip_id_sent_from,False, [start_time_out(router_id),threading.Timer(20, delet_router,(router_id,))]]
+    print_routing_table()
+
     
 def recived_update_router(rip_id_sent_from):
     """when recive updating packet from a router"""
@@ -383,16 +418,19 @@ def rip_check_entry(entry):
 def send_packet_to_neighbour():
     #craete packet and send to neigbour
     for neighbor_id, values in TABLE.items():
-        rip_packet = create_rip_packet(neighbor_id)
-        Sending_socket.sendto(rip_packet, (LOCAL_HOST, values[0])) #need input port and out port as gloabl
-        print("sending to {}".format(values[0]))
+        if neighbor_id in Neighbour:
+            
+            rip_packet = create_rip_packet(neighbor_id)
+            Sending_socket.sendto(rip_packet, (LOCAL_HOST, values[0])) #need input port and out port as gloabl
+            print("sending to {}".format(values[0]))
+  
     print("All packets to neighbors are sent")
     print()
-    perdic_send_to_neightr() #perdic send packet to neighbour
 
 def perdic_send_to_neightr():
+    send_packet_to_neighbour()
     #perdic send packet to neighbour
-    t = threading.Timer(5,send_packet_to_neighbour)
+    t = threading.Timer(30+(random.randrange(0, 6)*random.randrange(-1, 2)),perdic_send_to_neightr)
     t.start()
 
 # Currently being used for testing.
