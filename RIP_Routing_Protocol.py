@@ -315,6 +315,7 @@ def recive_packet(packet):
     print()
         
 def print_routing_table():
+    print(f"Roting table for router{Router_id_self}:")
     print("dst----------metric----------next_hop")
     for router_id, keys in TABLE.items():
         metric = keys[1]
@@ -348,8 +349,8 @@ def recived_update_router(rip_id_sent_from):
     timeout_timer.cancel() #means the router not time out 
     TABLE.get(rip_id_sent_from)[4][0] = start_time_out(rip_id_sent_from) #restart timing for time out
     
-    TABLE.get(router_id)[4][1].cancel() #cancel garbage timer not care if it started 
-    TABLE.get(router_id)[4][1] = threading.Timer(20, delet_router,(router_id,)) #create new garbage timer but it not started    
+    TABLE.get(rip_id_sent_from)[4][1].cancel() #cancel garbage timer not care if it started 
+    TABLE.get(rip_id_sent_from)[4][1] = threading.Timer(20, delet_router,(rip_id_sent_from,)) #create new garbage timer but it not started    
     print("----------reset time out timer----------")
     print()
     
