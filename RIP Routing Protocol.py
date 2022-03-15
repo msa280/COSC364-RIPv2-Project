@@ -130,38 +130,16 @@ class Configure():
         
         router_inputs = config['Router_Info']['input_ports'].split(', ')
         
-        input_ports = []
+        self.router_info['inputs'] = []
         
         for input_port in router_inputs:
             self.port_check(input_port)
             input_port = int(input_port)
-            input_ports.append(input_port)
+            self.router_info['inputs'].append(input_port)
         
-        
-        self.router_info['inputs'] = {}
-        
-        for port in input_ports:
-            
-            # Trying to create a UDP socket for each port.
-            try:
-                self.router_info['inputs'][port] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                print_msg('Success - Created socket for Port #' + str(port))
-            except socket.error as message:
-                print_msg('Failure - Unable to create socket. ' + str(message))
-                sys.exit()     
-                
-            # Trying to bind each port to the socket.
-            try:
-                self.router_info['inputs'][port].bind((LOCAL_HOST, port))
-                print_msg('Success - Bound Port #' + str(port) + 
-                          ' to the socket')
-            except socket.error as msg:
-                print_msg('Failure - Unable to bind port to socket. ' + str(msg))
-                sys.exit()            
         
         
 
-        
     def read_and_process_file(self):
         """ Starts processing and reading the configuration file of the router
         while performing sanity checks. """
@@ -180,54 +158,13 @@ class Configure():
 #*******************************************************************************
 
         
-        
-        
-    
 def print_msg(message):
     """ Prints the message and the time at which it was sent. """
     current_time = time.strftime("%Hh:%Mm:%Ss")
     print("[" + current_time + "]: " + message)
     
         
-def start_time_out(router_id):
-    """start a time out timer for a entry in routing table"""
-    t = threading.Timer(30, after_timeout,(router_id,)) #for every 180 will call not_reciving func
-    t.start()                             #start the thread
-    return t
-
-def after_timeout(router_id):
-    """need to solve if all table is empty_________________________"""
-    #after timeout the router change metric of that entry and trigger updates 
-    print("time out for {}!!!!!!!!!!!!".format(router_id))
-    print()    
-    entry = TABLE.get(router_id)
-    entry[1] = 16  #metic to 16
-    entry[3] = True #change flag
-    send_packet_to_neighbour() #trigger updates
-    set_garbage_timer(router_id) #start a garbage timer
-    entry[4][0].cancel() #close the timeout timer
     
-def set_garbage_timer(router_id):
-    #start a garbage timer
-    TABLE.get(router_id)[4][1].start()
-
-    
-def delet_router(router_id):
-    #upon garbage time it will pop the router
-    poped_router = TABLE.pop(router_id)
-    print("------{} has been deleted from the routing table".format(poped_router))
-    print_routing_table()
-    
-def create_routing_table(neighbours):
-    """{'router_id': 2, 'port': 1501, 'cost': 1} ==> dictionary 
-        dst_rt_id: port_num, metric, next_hop_id, flag, [timeout, garbage_timer]"""
-    global TABLE
-    global Neighbour
-    for neighbour in neighbours:
-        router_id = neighbour['router_id']
-        TABLE[router_id] = [neighbour['port'],neighbour['cost'], router_id, False, [start_time_out(router_id),threading.Timer(20, delet_router,(router_id,))]] #flag and timer later implment
-        Neighbour.append(router_id) #create a global neighbour rout id list
-    print("------------Global routing table has created------------")
         
 def create_rip_packet(send_to_neighbour_id):
     """create rip packet from routing table TO one of the neighbour_id 
@@ -291,6 +228,7 @@ def create_rip_packet(send_to_neighbour_id):
     print("")
     return packet
 
+
 def recive_packet(packet):
     """process recive packet"""
     #check hearder and entry
@@ -314,13 +252,7 @@ def recive_packet(packet):
     print("-----------------end process packet-----------------")
     print()
         
-def print_routing_table():
-    print(f"Roting table for router{Router_id_self}:")
-    print("dst----------metric----------next_hop")
-    for router_id, keys in TABLE.items():
-        metric = keys[1]
-        next_hop = keys[2]
-        print("{}{:13}{:16}".format(router_id, metric, next_hop))
+
 
 def process_entry(entry, rip_id_sent_from):
     """NEED IMP LATER FOR CHANGE TABLE when recive cost 16"""
@@ -343,6 +275,7 @@ def process_entry(entry, rip_id_sent_from):
     print_routing_table()
 
     
+    
 def recived_update_router(rip_id_sent_from):
     """when recive updating packet from a router"""
     timeout_timer = TABLE.get(rip_id_sent_from)[4][0]
@@ -353,6 +286,8 @@ def recived_update_router(rip_id_sent_from):
     TABLE.get(rip_id_sent_from)[4][1] = threading.Timer(20, delet_router,(rip_id_sent_from,)) #create new garbage timer but it not started    
     print("----------reset time out timer----------")
     print()
+    
+    
     
 def rip_check_header(header):
     """check rip header"""
@@ -456,6 +391,7 @@ class Router:
         self.router_op_data = []          # router's output data  ->  "{'router_id': 2, 'port': 1501, 'cost': 1}"
         self.router_ip_ports = []         # router's input ports 
         self.routing_table = {}           # router's own routing table
+        self.neighbour_ids = []
         
         
         
@@ -472,14 +408,121 @@ class Router:
         for output in self.router_info['outputs']:          # Adds the router's output information to the router_op_data  
             self.router_op_data.append(output)
         
-        for input_ports in self.router_info['inputs']:      # Adds the router's input ports to the router_ip_ports
-            self.router_ip_ports.append(input_ports)
+        for input_port in self.router_info['inputs']:       # Adds the router's input ports to the router_ip_ports
+            self.router_ip_ports.append(input_port)
+            
+        self.create_sockets() 
+    
+        
+    
+    def create_routing_table(self):
+        """{'router_id': 2, 'port': 1501, 'cost': 1} ==> dictionary 
+        dst_rt_id: port_num, metric, next_hop_id, flag, [timeout, garbage_timer]"""
+        
+        for output in self.router_op_data:
+            
+            router_id = output['router_id']
+            port = output['port']
+            cost = output['cost']
+            flag = False
+            timeout = self.start_timeout(router_id)
+            garbage_timer = threading.Timer(20, self.delete_router, (router_id))
+            
+            self.routing_table[router_id] = [port, cost, router_id, flag, [timeout, garbage_timer]] #flag and timer later implment
+            self.neighbour_ids.append(router_id)     # Creates a list of id's for neighbouring routers
+            
+        print_msg("Routing Table created for Router: {}\n".format(self.router_id))   
+        
+        
+        
+    def create_sockets(self):
+        """ Creates a UDP socket for each input port. """
+        
+        self.router_info['inputs'] = {}
+        
+        for port in self.router_ip_ports:
+            
+            # Trying to create a UDP socket for each port.
+            try:
+                self.router_info['inputs'][port] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                print_msg('Success - Created socket for Port #' + str(port))
+            except socket.error as message:
+                print_msg('Failure - Unable to create socket. ' + str(message))
+                sys.exit()     
+                
+            # Trying to bind each port to the socket.
+            try:
+                self.router_info['inputs'][port].bind((LOCAL_HOST, port))
+                print_msg('Success - Bound Port #' + str(port) + 
+                          ' to the socket')
+            except socket.error as msg:
+                print_msg('Failure - Unable to bind port to socket. ' + str(msg))
+                sys.exit()            
+        
+        
+        
+    def start_timeout(self, router_id):
+        """ Starts a timeout for an entry in the routing table. """
+        timeout = threading.Timer(30, self.after_timeout, (router_id,)) #for every 180 seconds will call not_reciving func
+        timeout.start()       #start the thread
+        return timeout
+        
+        
+        
+    def after_timeout(self, router_id):
+        """need to solve if all table is empty_________________________"""
+        #after timeout the router change metric of that entry and trigger updates 
+        print_msg("WARNING - Router {} has timed out\n".format(router_id))
+        
+        entry = self.routing_table.get(router_id)
+        entry[1] = 16  #set metic to 16
+        entry[3] = True # change flag
+        send_packet_to_neighbour() #trigger updates
+        self.start_garbage_timer(router_id) #start a garbage timer
+        entry[4][0].cancel() #close the timeout timer
+        
+        
+        
+    def delete_router(self, router_id):
+        """ Pops the router if garbage timer expires. """
+        popped_router = self.routing_table.pop(router_id)
+        print_msg("Router {} has been deleted from the routing table".format(router_id))
+
             
             
+    def start_garbage_timer(self, router_id):
+        """ Starts a garbage timer for the router. """
+        garbage_timer = self.routing_table[router_id][4][1]
+        garbage_timer.start()    
+
+
+    
+    def print_routing_table(self):
+        """ Prints the routing table. """ 
+        print("\n")
+        print(" _______________________________________(Routing Table: Router {})____________________________________________".format(self.router_id))
+        print("|____________________________________________________________________________________________________________|")
+        print("| Router ID | Port | Cost |  Flag  |                Timeout             |           Garbage Timer            |")
+        print("|-----------|------|------|--------|------------------------------------|------------------------------------|")
+        
+        for router_id, output in self.routing_table.items():
+            port = output[0]
+            cost = output[1]
+            router_id = output[2]     # ID for neighbour router
+            flag = output[3]
+            timeout = output[4][0]
+            garbage_timer = output[4][1]
+            
+            print("|     {0}     | {1} |  {2}   |  {3} |   {4}       {5}".format(router_id, port, cost, flag, timeout, garbage_timer))
             
             
-            
-            
+        print("|____________________________________________________________________________________________________________|\n")
+        print("\n")
+        
+    
+    
+    
+           
     def check_format(self):
         """ FOR US TO CHECK THE FROMAT OF THE GIVEN ROUTER AND ITS VALUES. """
         
@@ -488,22 +531,17 @@ class Router:
             print(val)
         print("********************************************\n")
         
-        
         print("\n_____________ router_ip_ports _____________")
         for val1 in self.router_ip_ports:
             print(val1)
         print("---------------------------------------------\n")
-        
-        
+    
         print("\n_____________ router_id_____________")
         print(self.router_id)
         print("--------------------------------------\n")
-            
         
         
-        
-
-
+              
 
 
 # Currently being used for testing.
@@ -516,10 +554,13 @@ def main():
     filename = "router1.txt"
     router = Router(filename)
     router.configure_router()  
-    router.check_format()          #Run this to check format of values in Router class
+    router.create_routing_table()
+    #router.check_format()          #Run this to check format of values in Router class
+    
     
     #initial routing table dst_rt_id: port_num, metric, next_hop_id, flag, timer
-    create_routing_table(router.router_info['outputs'])
+    router.create_routing_table()
+    router.print_routing_table()
     #for key,values in table.items():
     #   print(key,values)
     
