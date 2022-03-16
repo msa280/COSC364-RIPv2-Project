@@ -15,11 +15,11 @@ import select
 import threading    # use timer here so sys load will not affect the time
 import random
 
-TABLE = {}                  #routing table 
+TABLE = {}                  #routing table[dst_id]: cost next_hop flag timeout garbage_timer
 Neighbour = []            #contain all neighbour router id:[cost port]
 Sending_socket = None       #choise one of input port as Sending socket
 Router_id_self = None       #router id of this instance
-Router_outps = None
+
 LOCAL_HOST = '127.0.0.1'
 
 #*******************************************************************************
@@ -32,8 +32,8 @@ class Configure():
     def __init__(self, config_file):
         """ Initiates the configuration file. """
         self.config_file = config_file
-        self.router_info = {}
-        self.neighbor = {}
+        self.router_info = {} #i think it's better un pack this to self.input and self.router_id
+        self.neighbor = {}  #I add this new more useable so the inf['outputs'] will not needed
         
         
         
@@ -153,7 +153,7 @@ class Configure():
                 print_msg('Failure - Unable to create socket. ' + str(message))
                 sys.exit()     
                 
-            # Trying to bind each port to the socket.
+            # Trying to bind each port to the socket. #try to move this to router class
             try:
                 self.router_info['inputs'][port].bind((LOCAL_HOST, port))
                 print_msg('Success - Bound Port #' + str(port) + 
@@ -193,7 +193,7 @@ def print_msg(message):
     
         
 def start_time_out(router_id):
-    """start a time out timer for a entry in routing table"""
+    """start a time out timer for a entry in routing table""" #rememer when delet from table cancel this timer first*******
     t = threading.Timer(30, after_timeout,(router_id,)) #for every 180 will call not_reciving func
     t.start()                             #start the thread
     return t
@@ -242,7 +242,7 @@ def create_rip_packet(send_to_neighbour_id):
     #rip entrys
     if len(TABLE) > 20: #how to deal with this?
         return 
-    if len(TABLE) == 0:
+    if len(TABLE) == 0: #no entry in table will only send header to neb
         return packet
     for dst_router_id, values in TABLE.items():
         if dst_router_id == send_to_neighbour_id:
@@ -284,19 +284,20 @@ def create_rip_packet(send_to_neighbour_id):
             packet.append(0)
             packet.append(0)
             packet.append(metric &0xFF) 
-        #next_hop
-        packet.append(0)
-        packet.append(0)
-        packet.append(next_hop &0xFF) 
-        packet.append((next_hop >> 8) &0xFF)   
-    print("packet ready for send to router{} from {}-----------------".format(send_to_neighbour_id, Router_id_self))
-    print("")
+        ##next_hop
+        #packet.append(0)
+        #packet.append(0)
+        #packet.append(next_hop &0xFF) 
+        #packet.append((next_hop >> 8) &0xFF)   
+    #print("packet ready for send to router{} from {}-----------------".format(send_to_neighbour_id, Router_id_self))
+    #print("")
     return packet
 
 
 def recive_packet(packet):
     """process recive packet"""
     global TABLE
+    
     #check hearder and entry
     len_packet = len(packet)
     if not rip_check_header(packet[:4]): 
@@ -304,11 +305,15 @@ def recive_packet(packet):
         return 
     
     neb_id = (int(packet[:4][2] & 0xFF)) + int((packet[:4][3] << 8))
+ 
+    print(f"Recived packet from {neb_id}")
+    print("+++++++++")
     
+    #if table dun have neb in table 
     if TABLE.get(neb_id) == None:
         cost,_ = Neighbour.get(neb_id)
         TABLE[neb_id] = [cost, neb_id, False, start_time_out(neb_id), threading.Timer(20, delet_router, (neb_id,))]
-        
+    #else reinitize timer of neb
     else:
         cost,_ = Neighbour.get(neb_id)
         TABLE[neb_id][0] = cost
@@ -316,33 +321,32 @@ def recive_packet(packet):
         TABLE[neb_id][3] = start_time_out(neb_id)
         TABLE[neb_id][4].cancel()
         TABLE[neb_id][4] = threading.Timer(20, delet_router, (neb_id,))
+    #if only recive header so stop
     if len_packet == 4:
-        print_routing_table()
         return
     #end for neb processing 
     
-    for entry_start_index in range(4,len_packet,24):
-        if not rip_check_entry(packet[entry_start_index:entry_start_index+24]):
-            index_entry = (len_packet - 4) // 24
+    for entry_start_index in range(4,len_packet,20): #packet dun have net_hop so 20byts
+        if not rip_check_entry(packet[entry_start_index:entry_start_index+20]):
+            index_entry = (len_packet - 4) // 20
             print(f"wrong entry {index_entry} format-----------------")
             return 
     print("----------packet entry check pass----------")
     print()    
     
     #start for non_neb processing
-    for entry_start_index in range(4,len_packet,24):
-        index_entry = (len_packet - 4) // 24
+    for entry_start_index in range(4,len_packet,20):
+        index_entry = (len_packet - 4) // 20
         print(f"Processing entry{index_entry}-------------------")
-        process_entry(packet[entry_start_index:entry_start_index+24],neb_id)
+        process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
     print("-----------------end process packet-----------------")
     print()
-    print_routing_table()
+    #print_routing_table()
         
 def print_routing_table():
     print(f"Roting table for router{Router_id_self}:")
     print("dst----------metric----------next_hop")
     for router_id, keys in TABLE.items():
-
         metric = keys[0]
         next_hop = keys[1]
         print("{}{:13}{:16}".format(router_id, metric, next_hop))
@@ -354,21 +358,25 @@ def process_entry(entry, neb_id):
     router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
     #metric
     metric = int(entry[19])
-    #next_hop   
-    next_hop = (int(entry[22] & 0xFF)) + int((entry[23] << 8))
+    
     
     total_cost = min(16, Neighbour.get(neb_id)[0] + metric)
-    #change metric of the table
+    #change metric of the table  
     if TABLE.get(router_id):
+        #next_hop   
+        next_hop = TABLE.get(router_id)[1]               
         if next_hop == neb_id:
+                      
             if total_cost != TABLE.get(router_id)[0]:
                 TABLE.get(router_id)[3].cancel()
                 TABLE.get(router_id)[3] = start_time_out(router_id)
                 TABLE.get(router_id)[4].cancel()
-                TABLE.get(router_id)[4] = threading.Timer(20, delet_router, (neb_id,))
+                TABLE.get(router_id)[4] = threading.Timer(20, delet_router, (router_id,))
                 TABLE.get(router_id)[0] = total_cost                             
                 TABLE.get(router_id)[2] = True
+                
                 if total_cost == 16:
+                    send_packet_to_neighbour()
                     set_garbage_timer(router_id) 
             else:
                 if total_cost != 16:
@@ -388,6 +396,7 @@ def process_entry(entry, neb_id):
         
     #else do onthing
     print_routing_table()
+    print("end of onr entry processing ")
 
 def rip_check_header(header):
     """check rip header"""
@@ -396,7 +405,7 @@ def rip_check_header(header):
     version = int(header[1])
     rip_id_sent_from = (int(header[2] & 0xFF)) + int((header[3] << 8))
     
-    print("----------recive packet from {}----------".format(rip_id_sent_from))
+    #print("----------recive packet from {}----------".format(rip_id_sent_from))
     if command != 2 or version != 2:
         return False
     else:
@@ -443,12 +452,12 @@ def rip_check_entry(entry):
         print("metric wrong!!!")
         return False      
     
-    #next_hop   
-    zero_part = int(entry[20]) + int(entry[21]) 
-    if zero_part != 0:
-        print("should be zero!!!")
-        return False  
-    next_hop = (int(entry[22] & 0xFF)) + int((entry[23] << 8))
+    ##next_hop   
+    #zero_part = int(entry[20]) + int(entry[21]) 
+    #if zero_part != 0:
+        #print("should be zero!!!")
+        #return False  
+    #next_hop = (int(entry[22] & 0xFF)) + int((entry[23] << 8))
 
     return True
 
@@ -462,7 +471,7 @@ def send_packet_to_neighbour():
         Sending_socket.sendto(rip_packet, (LOCAL_HOST, values[1])) #need input port and out port as gloabl
         print("sending to {}".format(values[1]))
   
-    print("All packets to neighbors are sent")
+    #print("All packets to neighbors are sent")
     print()
     print_routing_table()
 
