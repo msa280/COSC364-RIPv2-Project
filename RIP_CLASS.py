@@ -14,7 +14,7 @@ class Rip_routing():
         self.table = {}
         self.self_id = router_id
         self.timeout = 30
-        self.garbage_time = 20
+        self.garbage_time = 30
         self.neighbours = neighbours
         self.sending_socket = sending_socket
         
@@ -267,5 +267,5 @@ class Rip_routing():
     def perdic_send_to_neightr(self):
         self.send_packet_to_neighbour()
         #perdic send packet to neighbour
-        t = threading.Timer(3+(random.randrange(0, 6)*random.randrange(-1, 2)),self.perdic_send_to_neightr)
+        t = threading.Timer(3+(random.randrange(0, 6)*random.randrange(-1, 2)),self.perdic_send_to_neightr) #3+(random.randrange(0, 6)*random.randrange(-1, 2))
         t.start()   
