@@ -201,7 +201,7 @@ class Rip_routing():
         #start for non_neb processing
         for entry_start_index in range(4,len_packet,20):
             index_entry = (len_packet - 4) // 20
-            process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
+            self.process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
     
     
     def process_entry(self, entry, neb_id):
