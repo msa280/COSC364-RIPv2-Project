@@ -225,6 +225,7 @@ class Rip_routing():
                     
                     if total_cost == 16: #trigger event first time to 16
                         self.table.get(router_id)[2] = True
+                        self.table[router_id][3].cancel()
                         self.send_packet_to_neighbour()
                         self.set_garbage_timer(router_id) 
                 else:
@@ -235,7 +236,8 @@ class Rip_routing():
                 
             else: #if next hop not from packet send from and it cost less
                 if total_cost < self.table.get(router_id)[0]:
-                    self.init_timer(router_id)
+                    self.table[router_id][3].cancel()
+                    self.table[router_id][4].cancel()
                     self.table[router_id] = [total_cost, neb_id, False, self.start_time_out(router_id),threading.Timer(self.garbage_time, self.delet_router,(router_id,))]
             
         elif self.table.get(router_id) == None and total_cost != 16:
