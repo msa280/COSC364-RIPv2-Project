@@ -252,7 +252,7 @@ class Rip_routing():
             next_hop = keys[1]
             time_out = keys[3]
             garbage_time = keys[4]
-            print("{}{:13}{:16}{:19}{:21}".format(router_id, metric, next_hop, time_out, garbage_time))        
+            print("{}{:13}{:16}{:19}{:21}".format(router_id, metric, next_hop, 0, 0))        
    
    
     def send_packet_to_neighbour(self):
