@@ -162,6 +162,7 @@ class Rip_routing():
         return True    
     
     def init_timer(self,dst_id):
+        self.table[dst_id][2] = False
         self.table[dst_id][3].cancel()
         self.table[dst_id][4].cancel()
         self.table[dst_id][3] = self.start_time_out(dst_id)
@@ -190,8 +191,6 @@ class Rip_routing():
             self.table[neb_id] = [cost, neb_id, False, self.start_time_out(neb_id), threading.Timer(self.garbage_time, self.delet_router, (neb_id,))]
         #else reinitize timer of neb
         else:
-            cost,_ = self.neighbours.get(neb_id)
-            self.table[neb_id][0] = cost
             self.init_timer(neb_id)
         #if only recive header so stop
         if len_packet == 4:
@@ -202,6 +201,8 @@ class Rip_routing():
         for entry_start_index in range(4,len_packet,20):
             index_entry = (len_packet - 4) // 20
             self.process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
+            
+        self.print_routing_table()
     
     
     def process_entry(self, entry, neb_id):
@@ -242,7 +243,7 @@ class Rip_routing():
         
             
         #else do onthing
-        self.print_routing_table()
+        
         
     def print_routing_table(self):
         print(f"Roting table for router{self.self_id}:")
