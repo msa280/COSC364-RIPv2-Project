@@ -248,14 +248,24 @@ class Rip_routing():
         
         
     def print_routing_table(self):
-        print(f"Roting table for router{self.self_id}:")
-        print("dst----------metric----------next_hop---------timeout---------garbage_time")
+        """ Prints the routing table's current condition."""
+        print("\n")
+        print(" ___________________________________(Routing Table: Router {})______________________________________".format(self.self_id))
+        print("|___________________________________________________________________________________________________|")
+        print("| Router ID | Port | Cost |                Timeout             |           Garbage Timer            |")
+        print("|-----------|------|------|------------------------------------|------------------------------------|")
+        print("|     {0}     | {1} |  {2}   |   {3}       {4}".format(self.self_id, ' - ', 0, 0, 0))
+        
         for router_id, keys in self.table.items():
             metric = keys[0]
             next_hop = keys[1]
             time_out = keys[3]
             garbage_time = keys[4]
-            print("{}{:13}{:16}{:19}{:21}".format(router_id, metric, next_hop, 0, 0))        
+            print("|     {0}     | {1} |  {2}   |   {3}       {4}".format(router_id, next_hop, metric, 0, 0)) 
+
+        print("|___________________________________________________________________________________________________|\n")
+        print("\n")
+             
    
    
     def send_packet_to_neighbour(self):
@@ -270,4 +280,4 @@ class Rip_routing():
         self.send_packet_to_neighbour()
         #perdic send packet to neighbour
         t = threading.Timer(3+(random.randrange(0, 6)*random.randrange(-1, 2)),self.perdic_send_to_neightr) #3+(random.randrange(0, 6)*random.randrange(-1, 2))
-        t.start()   
+        t.start() 
