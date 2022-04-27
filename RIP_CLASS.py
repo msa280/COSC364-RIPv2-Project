@@ -11,45 +11,56 @@ LOCAL_HOST = '127.0.0.1'
 class Rip_routing():
 
     def __init__(self, router_id, neighbours, sending_socket):
+        """ Initialises the router. """
         self.table = {}
         self.self_id = router_id
+        self.neighbours = neighbours
+        self.sending_socket = sending_socket        
         self.timeout = 30
         self.garbage_time = 30
-        self.neighbours = neighbours
-        self.sending_socket = sending_socket
+        
+        
+        
+    def give_msg(message):
+        """ Prints the message and the time at which it was sent. """
+        current_time = time.strftime("%Hh:%Mm:%Ss")
+        print("[" + current_time + "]: " + message)    
+        
         
     def start_time_out(self, router_id):
-        """start a time out timer for a entry in routing table""" #rememer when delet from table cancel this timer first*******
-        t = threading.Timer(self.timeout, self.after_timeout,(router_id,)) #for every 30 will call not_reciving func
-        t.start()    
-        return t
+        """start a time out timer for an entry in the routing table""" 
+        # Remember when deleting from the table, cancel this timer first
+        time = threading.Timer(self.timeout, self.after_timeout,(router_id,)) #for every 30 will call not_reciving func
+        time.start()    
+        return time
+    
     
     def after_timeout(self, router_id):
-        """need to solve if all table is empty_________________________"""
-        #after timeout the router change metric of that entry and trigger updates 
-        print("time out for {}!!!!!!!!!!!!\n".format(router_id))
+        """ Updates the routing table after a router has timed out. """
+        # After timeout, the router changes the metric of that entry and triggers updates 
+        give_msg("Router {} has timed out!\n".format(router_id))
         entry = self.table.get(router_id)
         if entry[2] == False:
-            entry[0] = 16  #metic to 16
-            entry[2] = True #change flag
-            self.send_packet_to_neighbour() #trigger updates when metric first become 16
-        self.set_garbage_timer(router_id) #start a garbage timer
-        entry[3].cancel() #close the timeout timer    
+            entry[0] = 16  # Change metric to 16
+            entry[2] = True # Change Flag
+            self.send_packet_to_neighbour() # Triggers updates when metric first becomes 16
+        self.set_garbage_timer(router_id) # Start a garbage timer
+        entry[3].cancel() # Closes the timeout timer   
         
     def set_garbage_timer(self, router_id):
         '''start a garbage timer '''
         self.table.get(router_id)[4].start()    
         
-    def delet_router(self, router_id):
-        '''upon garbage time it will pop the router'''
+    def delete_router(self, router_id):
+        '''Upon completion of garbage timer, it pops the router from the table.'''
         self.table[router_id][3].cancel() #cancel timer for the timeout and garbage
         self.table[router_id][4].cancel() #cancel timer for the timeout and garbage
         poped_router = self.table.pop(router_id, 0)
         if poped_router == 0:
-            print(f"No such router_id:{router_id} in the routing table")
+            give_msg(f"No such router_id:{router_id} in the routing table")
             return 
-        print("------{} has been deleted from the routing table".format(router_id))
-        print("NEW ROUTING TABLE: ")
+        give_msg("Router {} has been deleted from the routing table.".format(router_id))
+        print("New Routing Table: ")
         self.print_routing_table()    
     
                 
@@ -166,7 +177,7 @@ class Rip_routing():
         self.table[dst_id][3].cancel()
         self.table[dst_id][4].cancel()
         self.table[dst_id][3] = self.start_time_out(dst_id)
-        self.table[dst_id][4] = threading.Timer(self.garbage_time, self.delet_router, (dst_id,))
+        self.table[dst_id][4] = threading.Timer(self.garbage_time, self.delete_router, (dst_id,))
        
         
     def recive_packet(self, packet):
@@ -188,7 +199,7 @@ class Rip_routing():
         #if table dun have neb in table 
         if self.table.get(neb_id) == None:
             cost,_ = self.neighbours.get(neb_id)
-            self.table[neb_id] = [cost, neb_id, False, self.start_time_out(neb_id), threading.Timer(self.garbage_time, self.delet_router, (neb_id,))]
+            self.table[neb_id] = [cost, neb_id, False, self.start_time_out(neb_id), threading.Timer(self.garbage_time, self.delete_router, (neb_id,))]
         #else reinitize timer of neb
         else:
             self.init_timer(neb_id)
@@ -238,10 +249,10 @@ class Rip_routing():
                 if total_cost < self.table.get(router_id)[0]:
                     self.table[router_id][3].cancel()
                     self.table[router_id][4].cancel()
-                    self.table[router_id] = [total_cost, neb_id, False, self.start_time_out(router_id),threading.Timer(self.garbage_time, self.delet_router,(router_id,))]
+                    self.table[router_id] = [total_cost, neb_id, False, self.start_time_out(router_id),threading.Timer(self.garbage_time, self.delete_router,(router_id,))]
             
         elif self.table.get(router_id) == None and total_cost != 16:
-            self.table[router_id] = [total_cost, neb_id, False, self.start_time_out(router_id),threading.Timer(self.garbage_time, self.delet_router,(router_id,))]
+            self.table[router_id] = [total_cost, neb_id, False, self.start_time_out(router_id),threading.Timer(self.garbage_time, self.delete_router,(router_id,))]
         
             
         #else do onthing
