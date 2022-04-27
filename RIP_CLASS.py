@@ -250,20 +250,21 @@ class Rip_routing():
     def print_routing_table(self):
         """ Prints the routing table's current condition."""
         print("\n")
-        print(" ___________________________________(Routing Table: Router {})______________________________________".format(self.self_id))
-        print("|___________________________________________________________________________________________________|")
-        print("| Router ID | Port | Cost |                Timeout             |           Garbage Timer            |")
-        print("|-----------|------|------|------------------------------------|------------------------------------|")
-        print("|     {0}     | {1} |  {2}   |   {3}       {4}".format(self.self_id, ' - ', 0, 0, 0))
+        print(" _________________(Routing Table: Router {})___________________".format(self.self_id))
+        print("|______________________________________________________________|")
+        print("| Router ID | Next Hop | Cost |    Timeout   |  Garbage Timer  |")
+        print("|-----------|----------|------|--------------|-----------------|")
+        print("|{:^11}|{:^10}|{:^6}|{:^14.2f}|{:^17}|".format(self.self_id, '-', 0, 0, 0))
+
         
         for router_id, keys in self.table.items():
             metric = keys[0]
             next_hop = keys[1]
             time_out = keys[3]
             garbage_time = keys[4]
-            print("|     {0}     | {1} |  {2}   |   {3}       {4}".format(router_id, next_hop, metric, 0, 0)) 
+            print("|{:^11}|{:^10}|{:^6}|{:^14.2f}|{:^17}|".format(router_id, next_hop, metric, 0, 0))
 
-        print("|___________________________________________________________________________________________________|\n")
+        print("|___________|__________|______|______________|_________________|")
         print("\n")
              
    
