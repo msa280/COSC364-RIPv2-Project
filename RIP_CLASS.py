@@ -8,6 +8,7 @@ import random
 
 LOCAL_HOST = '127.0.0.1'
 
+
 class Rip_routing():
     
 
@@ -32,14 +33,7 @@ class Rip_routing():
     
         
         
-    def give_msg(message):
-        """ Prints the message and the time at which it was sent. """
-        current_time = time.strftime("%Hh:%Mm:%Ss")
-        print("[" + current_time + "]: " + message)    
-        
-        
-        
-        
+   
     def start_timeout(self, router_id):
         """Starts a timeout timer for an entry in the routing table""" 
         # Remember when deleting from the table, cancel this timer first
@@ -223,10 +217,6 @@ class Rip_routing():
      
        
        
-       
-        
-    
-    
         
     def receive_packet(self, packet):
         """ Process a received packet. """
@@ -362,3 +352,12 @@ class Rip_routing():
         #perdic send packet to neighbour
         t = threading.Timer(3+(random.randrange(0, 6)*random.randrange(-1, 2)),self.perdic_send_to_neightr) #3+(random.randrange(0, 6)*random.randrange(-1, 2))
         t.start() 
+
+
+        
+def give_msg(message):
+    """ Prints the message and the time at which it was sent. """
+    current_time = time.strftime("%Hh:%Mm:%Ss")
+    print("[" + current_time + "]: " + message)   
+
+
