@@ -53,7 +53,7 @@ class Rip_routing():
     def start_timeout(self, router_id):
         """Starts a timeout timer for an entry in the routing table""" 
         # Remember when deleting from the table, cancel this timer first
-        self.timeout_started = True;
+        
         threading_time = threading.Timer(self.timeout, self.end_timeout,(router_id,)) #for every 30 will call not_reciving func
         threading_time.start()   
         self.timeout_timer_dict[router_id] = time.time()
@@ -98,7 +98,7 @@ class Rip_routing():
         popped_router = self.table.pop(router_id, 0)
         
         self.give_msg("Router {} has been deleted from the routing table.".format(router_id))
-        self.timeout_started = False
+       
         
         self.print_routing_table()    
     
@@ -240,7 +240,6 @@ class Rip_routing():
         
         self.give_msg("Packet received.")
         
-        self.timeout = 30
         
         # Check header and entries
         len_packet = len(packet)
@@ -272,6 +271,7 @@ class Rip_routing():
             
         # Stops furthur processing if only the header is received.
         if (len_packet == 4):
+            self.print_routing_table()
             return
         # End of neighbour processing
         
@@ -365,7 +365,7 @@ class Rip_routing():
             else:
                 garbage_timer_time = 0            
             
-            print("|{:^11}|{:^10}|{:^6}|{:^14.3f}|{:^17.3f}|".format(router_id, next_hop, metric, timeout_time, garbage_timer_time))   
+            print("|{:^11}|{:^10}|{:^6}|{:^14.5f}|{:^17.5f}|".format(router_id, next_hop, metric, timeout_time, garbage_timer_time))   
         print("|___________|__________|______|______________|_________________|")
         print("\n")
         
@@ -393,7 +393,7 @@ class Rip_routing():
         """ Sends packets to neigbours periodically. Done when a certain amount
         of time has passed. """
         self.send_packet()
-        t = threading.Timer(5 + 0.2 * (random.randrange(0, 5) * random.randrange(-1, 1)), self.periodically_send_packets) 
+        t = threading.Timer(3+(random.randrange(0, 6)*random.randrange(-1, 2)),self.periodically_send_packets)
         t.start() 
         
                 
