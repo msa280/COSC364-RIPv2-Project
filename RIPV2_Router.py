@@ -223,8 +223,7 @@ class RIPV2_Router():
     def receive_packet(self, packet):
         """ Process a received packet. """
         
-        # Waits for a short time before beginning processing
-        self.wait()
+        self.wait(0.4)
         
         self.give_update("Packet received.")
         
@@ -268,7 +267,9 @@ class RIPV2_Router():
             self.process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
             
         # Prints routing table after receiving and processing packet.    
-        self.print_routing_table()
+        #self.print_routing_table()
+        
+        
         
         
     
@@ -277,7 +278,7 @@ class RIPV2_Router():
         """Processing one entry so the table might be changed, more specific on page 27/28 """
         
         # Waits for a short time before beginning processing
-        self.wait()
+        self.wait(0.4)
     
         router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
         entry_metric = int(entry[19])
@@ -328,29 +329,29 @@ class RIPV2_Router():
         
         
     def print_routing_table(self):
-        """ Prints the routing table's current condition."""
+        """ Prints the routing table's of the router."""
+        
+        self.wait(0.4)
         print("\n")
-        print(" _________________(Routing Table: Router {})___________________".format(self.self_id))
+        print(" ________________________[Router {}]___________________________".format(self.self_id))
         print("|______________________________________________________________|")
         print("| Router ID | Next Hop | Cost |    Timeout   |  Garbage Timer  |")
-        print("|-----------|----------|------|--------------|-----------------|")   
+        print("|===========|==========|======|==============|=================|")   
         
         router_id_list = list(self.table.keys())
         router_id_list.sort()
         for router_id in router_id_list:
-            keys = self.table.get(router_id)
-            metric = keys[0]
-            next_hop = keys[1]
-            timeout = keys[3]
-            garbage_time = keys[4]
-            timeout_time= time.time() - self.timeout_timer_dict[router_id] 
-            if self.garbage_timer_dict.get(router_id):
+            metric, next_hop, flag, timeout, garbage = self.table.get(router_id)
+        
+            timeout_time = time.time() - self.timeout_timer_dict[router_id] 
+            if (self.garbage_timer_dict.get(router_id)):
                 garbage_timer_time = time.time() - self.garbage_timer_dict[router_id]
                 timeout_time = 0
             else:
                 garbage_timer_time = 0            
             
-            print("|{:^11}|{:^10}|{:^6}|{:^14.5f}|{:^17.5f}|".format(router_id, next_hop, metric, timeout_time, garbage_timer_time))   
+            print("|{:^11}|{:^10}|{:^6}|{:^14.3f}|{:^17.3f}|".format(router_id, next_hop, metric, timeout_time, garbage_timer_time))   
+            
         print("|___________|__________|______|______________|_________________|")
         print("\n")
         
@@ -359,11 +360,12 @@ class RIPV2_Router():
     def send_packet(self):
         """ Creates a packet for each neigbour and sends it to the neighbour. """
         self.give_update("Sending Packet.")
+        self.wait(0.4)
         for neighbor_id, values in self.neighbours.items():
             packet = self.create_packet(neighbor_id)
             neb_port_num = values[1]
             self.sending_socket.sendto(packet, (LOCAL_HOST, neb_port_num)) 
-        #self.print_routing_table()
+        self.print_routing_table()
         
         
 
@@ -383,11 +385,10 @@ class RIPV2_Router():
         
         
         
-    def wait(self):
+    def wait(self, seconds):
         """ This function temporarily runs a short timeout timer so that system
         load balancing can occur. """
-        threading_time = threading.Timer(0.35) 
-        threading_time.start() 
+        time.sleep(seconds)
 
         
         
