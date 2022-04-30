@@ -353,7 +353,10 @@ class Rip_routing():
         print("| Router ID | Next Hop | Cost |    Timeout   |  Garbage Timer  |")
         print("|-----------|----------|------|--------------|-----------------|")   
         
-        for router_id, keys in self.table.items():
+        router_id_list = list(self.table.keys())
+        router_id_list.sort()
+        for router_id in router_id_list:
+            keys = self.table.get(router_id)
             metric = keys[0]
             next_hop = keys[1]
             timeout = keys[3]
