@@ -1,10 +1,10 @@
 '''
-    COSC364 (RIP Assignment)
-    Authors: Haider Saeed, Drogo Shi
-    Date: 07/03/2022
+                        COSC364 (RIP Assignment)
+                Authors: Haider Saeed (msa280), Drogo Shi
+                            Date: 07/03/2022
 
-    Program Definition: Configures RIP routing protocol based on the specifications
-                      outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
+Program Definition: Configures RIP routing protocol based on the specifications
+                   outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
 '''
 
 
@@ -21,7 +21,7 @@ LOCAL_HOST = '127.0.0.1'
 
 
 
-class Rip_routing():
+class RIPV2_Router():
     
 
     def __init__(self, router_id, neighbours, sending_socket):
@@ -166,9 +166,6 @@ class Rip_routing():
     
     
     
-    
-    
-    
     def check_rip_header(self, header):
         """ Checks if the RIP header is correct. If it is correct, it returns
         the id of the router it received from."""
@@ -182,9 +179,7 @@ class Rip_routing():
             return False
         else:
             return received_from_router_id   
-        
-        
-        
+           
         
         
     def check_rip_entry(self, entry):
@@ -228,9 +223,6 @@ class Rip_routing():
             
       
     
-     
-       
-       
         
     def receive_packet(self, packet):
         """ Process a received packet. """
@@ -279,7 +271,6 @@ class Rip_routing():
             
         # Prints routing table after receiving and processing packet.    
         #self.print_routing_table()
-    
     
     
     
@@ -335,13 +326,6 @@ class Rip_routing():
         
         
         
-        
-        
-        
-        
-        
-        
-        
     def print_routing_table(self):
         """ Prints the routing table's current condition."""
         print("\n")
@@ -369,11 +353,6 @@ class Rip_routing():
         print("|___________|__________|______|______________|_________________|")
         print("\n")
         
-       
-        
-             
-   
-   
    
    
     def send_packet(self):
@@ -386,10 +365,6 @@ class Rip_routing():
         self.print_routing_table()
         
         
-        
-    
-    
-    
     
     def periodically_send_packets(self):
         """ Sends packets to neigbours periodically. Done when a certain amount
@@ -403,13 +378,7 @@ class Rip_routing():
         """ Prints the message and the time at which it was sent. """
         current_time = time.strftime("%Hh:%Mm:%Ss")
         print("[" + current_time + "]: " + message) 
-        
-        
 
-        
-        
-    
-        
         
         
                 
