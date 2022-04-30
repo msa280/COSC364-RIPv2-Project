@@ -1,7 +1,7 @@
 
-                        COSC364 (RIP Assignment)
+                      COSC364 (RIPV2 Routing Protocol)
                 Authors: Haider Saeed (msa280), Drogo Shi
-                            Date: 07/03/2022
+                           Date: 07/03/2022
 
 
 File Definition: README file for the project.
