@@ -52,21 +52,18 @@ class RIPV2_Router():
     def start_timeout(self, router_id):
         """Starts a timeout timer for an entry in the routing table""" 
         # Remember when deleting from the table, cancel this timer first
-        
         threading_time = threading.Timer(self.timeout, self.end_timeout,(router_id,)) #for every 30 will call not_reciving func
         threading_time.start()   
         self.timeout_timer_dict[router_id] = time.time()
         return threading_time
-    
 
-    
     
     
     def end_timeout(self, router_id):
         """ Updates the routing table after a router has timed out. """
         # After timeout, the router changes the metric of that entry and triggers updates 
         
-        self.give_msg("Router {} has timed out!\n".format(router_id))
+        self.give_update("Router {} has timed out!\n".format(router_id))
         entry = self.table.get(router_id)
         if entry[2] == False:
             entry[0] = 16  # Change metric to 16
@@ -94,7 +91,7 @@ class RIPV2_Router():
         timeout_timer.cancel() 
         garbage_timer.cancel()
         popped_router = self.table.pop(router_id, 0)
-        self.give_msg("Router {} has been deleted from the routing table.".format(router_id))
+        self.give_update("Router {} has been deleted from the routing table.".format(router_id))
         
        
     
@@ -226,8 +223,10 @@ class RIPV2_Router():
     def receive_packet(self, packet):
         """ Process a received packet. """
         
-        self.give_msg("Packet received.")
+        # Waits for a short time before beginning processing
+        self.wait()
         
+        self.give_update("Packet received.")
         
         # Check header and entries
         len_packet = len(packet)
@@ -253,7 +252,7 @@ class RIPV2_Router():
         if (self.table.get(neb_id) == None):
             cost,_ = self.neighbours.get(neb_id)
             self.table[neb_id] = [cost, neb_id, False, self.start_timeout(neb_id), threading.Timer(self.garbage_time, self.delete_router, (neb_id,))]
-        # Else, reinitialise the timer
+        # Else, reinitialize the timer
         else:
             self.init_timer(neb_id)
             
@@ -269,13 +268,16 @@ class RIPV2_Router():
             self.process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
             
         # Prints routing table after receiving and processing packet.    
-        #self.print_routing_table()
-    
-    
+        self.print_routing_table()
+        
+        
     
     
     def process_entry(self, entry, neb_id):
         """Processing one entry so the table might be changed, more specific on page 27/28 """
+        
+        # Waits for a short time before beginning processing
+        self.wait()
     
         router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
         entry_metric = int(entry[19])
@@ -356,27 +358,36 @@ class RIPV2_Router():
    
     def send_packet(self):
         """ Creates a packet for each neigbour and sends it to the neighbour. """
-        self.give_msg("Sending Packet.")
+        self.give_update("Sending Packet.")
         for neighbor_id, values in self.neighbours.items():
             packet = self.create_packet(neighbor_id)
             neb_port_num = values[1]
             self.sending_socket.sendto(packet, (LOCAL_HOST, neb_port_num)) 
-        self.print_routing_table()
+        #self.print_routing_table()
         
         
-    
+
     def periodically_send_packets(self):
-        """ Sends packets to neigbours periodically. Done when a certain amount
-        of time has passed. """
+        """ Sends packets to neigbours periodically. Done when a certain 
+        random amount of time has passed. """
         self.send_packet()
-        t = threading.Timer(5+ 0.2*(random.randrange(0, 6)*random.randrange(-1, 1)),self.periodically_send_packets)
+        t = threading.Timer(5 + 0.2 * (random.randrange(0, 6) * random.randrange(-1, 1)), self.periodically_send_packets)
         t.start() 
         
+        
                 
-    def give_msg(self, message):
-        """ Prints the message and the time at which it was sent. """
+    def give_update(self, message):
+        """ Gives the update message and the time at which it was sent. """
         current_time = time.strftime("%Hh:%Mm:%Ss")
         print("[" + current_time + "]: " + message) 
+        
+        
+        
+    def wait(self):
+        """ This function temporarily runs a short timeout timer so that system
+        load balancing can occur. """
+        threading_time = threading.Timer(0.35) 
+        threading_time.start() 
 
         
         
