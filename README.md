@@ -1,5 +1,5 @@
 
-                      COSC364 (RIPV2 Routing Protocol)
+                     COSC364 (RIPV2 Routing Protocol)
                 Authors: Haider Saeed (msa280), Drogo Shi
                            Date: 07/03/2022
 

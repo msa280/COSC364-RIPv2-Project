@@ -1,7 +1,7 @@
 '''
-                        COSC364 (RIP Assignment)
-                Authors: Haider Saeed (msa280), Drogo Shi
-                            Date: 07/03/2022
+                    COSC364 (RIPV2 Routing Protocol)
+               Authors: Haider Saeed (msa280), Drogo Shi
+                           Date: 07/03/2022
 
 Program Definition: Configures RIP routing protocol based on the specifications
                    outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
@@ -20,7 +20,7 @@ from RIPV2_ConfigureFile import*
 
 LOCAL_HOST = '127.0.0.1'
 
-def start_router():
+def start_daemon():
     """Starts up the router."""
     # Gets the name of file from the command line. Example (python3 RIPV2_Daemon.py router1.txt)
     filename = sys.argv[1]
@@ -58,7 +58,7 @@ def start_router():
 
 def main():
     """ This is the main function which runs the routing protocol."""
-    start_router()
+    start_daemon()
     
 main()
 

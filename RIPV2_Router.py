@@ -1,12 +1,11 @@
 '''
-                        COSC364 (RIP Assignment)
-                Authors: Haider Saeed (msa280), Drogo Shi
-                            Date: 07/03/2022
+                    COSC364 (RIPV2 Routing Protocol)
+               Authors: Haider Saeed (msa280), Drogo Shi
+                           Date: 07/03/2022
 
 Program Definition: Configures RIP routing protocol based on the specifications
                    outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
 '''
-
 
 import sys
 import configparser     # ConfigParser class which implements a basic configuration language
