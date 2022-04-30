@@ -1,5 +1,5 @@
 
-                     COSC364 (RIPV2 Routing Protocol)
+                     COSC364 (RIPv2 Routing Protocol)
                 Authors: Haider Saeed (msa280), Drogo Shi
                            Date: 07/03/2022
 
@@ -20,7 +20,7 @@ To start a router complete the following steps:
 
 2) Once directory is changed, run the following command to start up a router:
 
-   python3 RIPV2_Daemon.py Routers/router"X".txt 
+   python3 RIPv2_Daemon.py Routers/router"X".txt 
 
    where "X" is any number between 1 and 7 inclusive. 
 
