@@ -17,17 +17,21 @@ class Rip_routing():
         self.garbage_time = 30
         self.neighbours = neighbours
         self.sending_socket = sending_socket
+        self.timeout_timer_list = {}
+        self.garbage_timer_list = {}
         
     def start_time_out(self, router_id):
         """start a time out timer for a entry in routing table""" #rememer when delet from table cancel this timer first*******
         t = threading.Timer(self.timeout, self.after_timeout,(router_id,)) #for every 30 will call not_reciving func
         t.start()    
+        self.timeout_timer_list[router_id] = time.time()
         return t
     
     def after_timeout(self, router_id):
         """need to solve if all table is empty_________________________"""
         #after timeout the router change metric of that entry and trigger updates 
         print("time out for {}!!!!!!!!!!!!\n".format(router_id))
+        
         entry = self.table.get(router_id)
         if entry[2] == False:
             entry[0] = 16  #metic to 16
@@ -38,10 +42,14 @@ class Rip_routing():
         
     def set_garbage_timer(self, router_id):
         '''start a garbage timer '''
-        self.table.get(router_id)[4].start()    
+        
+        self.garbage_timer_list[router_id] = time.time()
+        self.table.get(router_id)[4].start()  
+        
         
     def delet_router(self, router_id):
         '''upon garbage time it will pop the router'''
+        
         self.table[router_id][3].cancel() #cancel timer for the timeout and garbage
         self.table[router_id][4].cancel() #cancel timer for the timeout and garbage
         poped_router = self.table.pop(router_id, 0)
@@ -255,7 +263,13 @@ class Rip_routing():
             next_hop = keys[1]
             time_out = keys[3]
             garbage_time = keys[4]
-            print("{}{:13}{:16}{:19}{:21}".format(router_id, metric, next_hop, 0, 0))        
+            timeout_left = time.time() - self.timeout_timer_list[router_id] #or count how many secs left use self.timeout - this 
+            if self.garbage_timer_list.get(router_id):
+                garbage_time_left = time.time() - self.garbage_timer_list[router_id]
+                timeout_left = 0
+            else:
+                garbage_time_left = 0
+            print("{}{:13}{:16}{:22.3f}{:24.3f}".format(router_id, metric, next_hop, timeout_left, garbage_time_left))        
    
    
     def send_packet_to_neighbour(self):
