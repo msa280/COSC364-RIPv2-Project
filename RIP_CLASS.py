@@ -32,51 +32,6 @@ class Rip_routing():
         self.sending_socket = sending_socket        
         self.timeout = 30
         self.garbage_time = 30
-<<<<<<< HEAD
-        self.neighbours = neighbours
-        self.sending_socket = sending_socket
-        self.timeout_timer_list = {}
-        self.garbage_timer_list = {}
-        
-    def start_time_out(self, router_id):
-        """start a time out timer for a entry in routing table""" #rememer when delet from table cancel this timer first*******
-        t = threading.Timer(self.timeout, self.after_timeout,(router_id,)) #for every 30 will call not_reciving func
-        t.start()    
-        self.timeout_timer_list[router_id] = time.time()
-        return t
-    
-    def after_timeout(self, router_id):
-        """need to solve if all table is empty_________________________"""
-        #after timeout the router change metric of that entry and trigger updates 
-        print("time out for {}!!!!!!!!!!!!\n".format(router_id))
-        
-        entry = self.table.get(router_id)
-        if entry[2] == False:
-            entry[0] = 16  #metic to 16
-            entry[2] = True #change flag
-            self.send_packet_to_neighbour() #trigger updates when metric first become 16
-        self.set_garbage_timer(router_id) #start a garbage timer
-        entry[3].cancel() #close the timeout timer    
-        
-    def set_garbage_timer(self, router_id):
-        '''start a garbage timer '''
-        
-        self.garbage_timer_list[router_id] = time.time()
-        self.table.get(router_id)[4].start()  
-        
-        
-    def delet_router(self, router_id):
-        '''upon garbage time it will pop the router'''
-        
-        self.table[router_id][3].cancel() #cancel timer for the timeout and garbage
-        self.table[router_id][4].cancel() #cancel timer for the timeout and garbage
-        poped_router = self.table.pop(router_id, 0)
-        if poped_router == 0:
-            print(f"No such router_id:{router_id} in the routing table")
-            return 
-        print("------{} has been deleted from the routing table".format(router_id))
-        print("NEW ROUTING TABLE: ")
-=======
         self.timeout_timer_dict = {} #diction for record every entry's start time of timeout timer
         self.garbage_timer_dict = {} #diction for record every entry's start time of garbage timer
         
@@ -139,14 +94,10 @@ class Rip_routing():
         #cancel timer for the timeout and garbage
         timeout_timer.cancel() 
         garbage_timer.cancel()
-    
         popped_router = self.table.pop(router_id, 0)
-        
         self.give_msg("Router {} has been deleted from the routing table.".format(router_id))
-       
         
->>>>>>> 50f2bfcc0c2c9ee53f2a2367bf4fad6b9fee7822
-        self.print_routing_table()    
+       
     
                 
                 
@@ -317,7 +268,7 @@ class Rip_routing():
             
         # Stops furthur processing if only the header is received.
         if (len_packet == 4):
-            self.print_routing_table()
+
             return
         # End of neighbour processing
         
@@ -327,7 +278,7 @@ class Rip_routing():
             self.process_entry(packet[entry_start_index:entry_start_index+20],neb_id)
             
         # Prints routing table after receiving and processing packet.    
-        self.print_routing_table()
+        #self.print_routing_table()
     
     
     
@@ -407,15 +358,6 @@ class Rip_routing():
             next_hop = keys[1]
             timeout = keys[3]
             garbage_time = keys[4]
-<<<<<<< HEAD
-            timeout_left = time.time() - self.timeout_timer_list[router_id] #or count how many secs left use self.timeout - this 
-            if self.garbage_timer_list.get(router_id):
-                garbage_time_left = time.time() - self.garbage_timer_list[router_id]
-                timeout_left = 0
-            else:
-                garbage_time_left = 0
-            print("{}{:13}{:16}{:22.3f}{:24.3f}".format(router_id, metric, next_hop, timeout_left, garbage_time_left))        
-=======
             timeout_time= time.time() - self.timeout_timer_dict[router_id] 
             if self.garbage_timer_dict.get(router_id):
                 garbage_timer_time = time.time() - self.garbage_timer_dict[router_id]
@@ -430,7 +372,6 @@ class Rip_routing():
        
         
              
->>>>>>> 50f2bfcc0c2c9ee53f2a2367bf4fad6b9fee7822
    
    
    
@@ -442,6 +383,8 @@ class Rip_routing():
             packet = self.create_packet(neighbor_id)
             neb_port_num = values[1]
             self.sending_socket.sendto(packet, (LOCAL_HOST, neb_port_num)) 
+        self.print_routing_table()
+        
         
         
     
@@ -452,7 +395,7 @@ class Rip_routing():
         """ Sends packets to neigbours periodically. Done when a certain amount
         of time has passed. """
         self.send_packet()
-        t = threading.Timer(3+(random.randrange(0, 6)*random.randrange(-1, 2)),self.periodically_send_packets)
+        t = threading.Timer(5+ 0.2*(random.randrange(0, 6)*random.randrange(-1, 1)),self.periodically_send_packets)
         t.start() 
         
                 
