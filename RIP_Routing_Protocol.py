@@ -1,17 +1,10 @@
 '''
-
     COSC364 (RIP Assignment)
-
     Authors: Haider Saeed, Drogo Shi
-
     Date: 07/03/2022
 
-    
-
     Program Definition: Configures RIP routing protocol based on the specifications
-
                       outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
-
 '''
 
 
@@ -295,6 +288,7 @@ def print_msg(message):
     print("[" + current_time + "]: " + message)
 
 
+
 def start_router():
 
     """Starts up the router."""
@@ -321,29 +315,25 @@ def start_router():
     
     #send packet to neighbor
 
-    rip_deamon.perdic_send_to_neightr()
+    rip_deamon.periodically_send_packets()
     
     while True:
         
-        all_input_socket = list(router.router_info['inputs'].values())
+        all_input_sockets = list(router.router_info['inputs'].values())
 
-        r_list, w_list, e_list = select.select(all_input_socket,[],[],5)
+        r_list, w_list, e_list = select.select(all_input_sockets, [], [], 5)
 
         for sk in r_list:
             packet = sk.recvfrom(1024)[0]  
-            rip_deamon.recieve_packet(packet)
+            rip_deamon.receive_packet(packet)
 
 
-
-
-# Currently being used for testing.
 
 
 
 def main():
     """ This is the main function which runs the routing protocol. """
     start_router()
-
-
+    
 main()
 
