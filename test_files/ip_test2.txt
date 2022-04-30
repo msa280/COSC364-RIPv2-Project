@@ -1,0 +1,6 @@
+[Router_Info]
+router_id: 1
+input_ports: 1023, 7001, 2001
+outputs: 1501-1-2, 1502-5-6, 1503-8-7
+periodic_time: 30
+time_out: 180

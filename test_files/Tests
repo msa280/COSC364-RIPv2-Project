@@ -1,0 +1,55 @@
+id_test1.txt ---> tests router id < 1
+id_test2.txt ---> tests router id > 64000
+ip_test1.txt ---> tests if input port is negative
+ip_test2.txt ---> tests input port >= 1024
+ip_test3.txt ---> tests input port <= 64000
+ip_test4.txt ---> tests if all entries are not in one line 
+ip_test5.txt ---> tests if an input port is repeated
+op_test1.txt ---> tests if output port number >= 1024
+op_test2.txt ---> tests if output port number <= 64000
+op_test3.txt ---> tests if output metric number >= 1
+op_test4.txt ---> tests if output metric number <= 15
+op_test5.txt ---> tests if output router id >= 1
+op_test6.txt ---> tests if output router id <= 64000
+op_test7.txt ---> tests to see if an output port number is in input port number
+op_test8.txt ---> tests to see if all output port numbers are on one line
+format_test1.txt ---> tests missing router id parameter
+format_test2.txt ---> tests missing input port parameter
+format_test3.txt ---> tests missing output port parameter
+config_test1.txt ---> tests missing router id value
+config_test2.txt ---> tests missing input ports values
+config_test3.txt ---> tests missing output ports values
+
+
+
+to Run easily just copy and paste ->
+
+python3 RIP_Routing_Protocol.py test_files/config_test1.txt
+python3 RIP_Routing_Protocol.py test_files/config_test2.txt
+python3 RIP_Routing_Protocol.py test_files/config_test3.txt
+python3 RIP_Routing_Protocol.py test_files/format_test1.txt
+python3 RIP_Routing_Protocol.py test_files/format_test2.txt
+python3 RIP_Routing_Protocol.py test_files/format_test3.txt
+python3 RIP_Routing_Protocol.py test_files/id_test1.txt
+python3 RIP_Routing_Protocol.py test_files/id_test2.txt
+python3 RIP_Routing_Protocol.py test_files/ip_test1.txt
+python3 RIP_Routing_Protocol.py test_files/ip_test2.txt
+python3 RIP_Routing_Protocol.py test_files/ip_test3.txt
+python3 RIP_Routing_Protocol.py test_files/ip_test4.txt
+python3 RIP_Routing_Protocol.py test_files/ip_test5.txt
+python3 RIP_Routing_Protocol.py test_files/op_test1.txt
+python3 RIP_Routing_Protocol.py test_files/op_test2.txt
+python3 RIP_Routing_Protocol.py test_files/op_test3.txt
+python3 RIP_Routing_Protocol.py test_files/op_test4.txt
+python3 RIP_Routing_Protocol.py test_files/op_test5.txt
+python3 RIP_Routing_Protocol.py test_files/op_test6.txt
+python3 RIP_Routing_Protocol.py test_files/op_test7.txt
+python3 RIP_Routing_Protocol.py test_files/op_test8.txt
+
+
+
+
+
+
+
+

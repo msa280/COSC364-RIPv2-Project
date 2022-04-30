@@ -1,0 +1,5 @@
+[Router_Info]
+router_id: 1
+input_ports: 6001, 7001, 2001
+periodic_time: 30
+time_out: 180
