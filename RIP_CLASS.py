@@ -21,12 +21,6 @@ LOCAL_HOST = '127.0.0.1'
 
 
 
-            
-
-
-
-
-
 class Rip_routing():
     
 
@@ -38,8 +32,8 @@ class Rip_routing():
         self.sending_socket = sending_socket        
         self.timeout = 30
         self.garbage_time = 30
-        self.timeout_started = False
-        self.last_update = None
+        self.timeout_timer_dict = {} #diction for record every entry's start time of timeout timer
+        self.garbage_timer_dict = {} #diction for record every entry's start time of garbage timer
         
         
     def init_timer(self, dst_id):
@@ -50,6 +44,8 @@ class Rip_routing():
         self.table[dst_id][4].cancel()
         self.table[dst_id][3] = self.start_timeout(dst_id)
         self.table[dst_id][4] = threading.Timer(self.garbage_time, self.delete_router, (dst_id,))
+        if self.garbage_timer_dict.get(dst_id):
+            self.garbage_timer_dict.pop(dst_id) #so no garbage timer started
     
         
         
@@ -58,11 +54,10 @@ class Rip_routing():
         """Starts a timeout timer for an entry in the routing table""" 
         # Remember when deleting from the table, cancel this timer first
         self.timeout_started = True;
-        self.give_msg("Timeout timer started for router {}".format(router_id))
-        time = threading.Timer(self.timeout, self.end_timeout,(router_id,)) #for every 30 will call not_reciving func
-        time.start()   
-        
-        return time
+        threading_time = threading.Timer(self.timeout, self.end_timeout,(router_id,)) #for every 30 will call not_reciving func
+        threading_time.start()   
+        self.timeout_timer_dict[router_id] = time.time()
+        return threading_time
     
 
     
@@ -71,6 +66,7 @@ class Rip_routing():
     def end_timeout(self, router_id):
         """ Updates the routing table after a router has timed out. """
         # After timeout, the router changes the metric of that entry and triggers updates 
+        
         self.give_msg("Router {} has timed out!\n".format(router_id))
         entry = self.table.get(router_id)
         if entry[2] == False:
@@ -79,16 +75,16 @@ class Rip_routing():
             self.send_packet() # Triggers updates when metric first becomes 16
         self.start_garbage_timer(router_id) # Start a garbage timer
         entry[3].cancel() # Closes the timeout timer  
-        self.timeout_started = False
+        
+        
         
         
         
         
     def start_garbage_timer(self, router_id):
         '''Starts a garbage timer. '''
-        self.give_msg("Garbger timer started for router {}".format(router_id))
         self.table.get(router_id)[4].start()    
-        
+        self.garbage_timer_dict[router_id] = time.time()     
 
         
         
@@ -292,7 +288,7 @@ class Rip_routing():
     
     
     def process_entry(self, entry, neb_id):
-        """NEED IMP LATER FOR CHANGE TABLE when recive cost 16"""
+        """Processing one entry so the table might be changed, more specific on page 27/28 """
     
         router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
         entry_metric = int(entry[19])
@@ -319,7 +315,7 @@ class Rip_routing():
                         # Timeout timer gets cancelled
                         self.table[router_id][3].cancel()
                         # Packet is then sent to neighbour and garbage timer is started
-                        self.send_packet_to_neighbour()
+                        self.periodically_send_packets()
                         self.start_garbage_timer(router_id) 
                 else:
                     # If cost doesn't change and is not 16, reset router timers
@@ -351,44 +347,29 @@ class Rip_routing():
         
     def print_routing_table(self):
         """ Prints the routing table's current condition."""
-        
-        current_time = self.get_time()
-        
-        if (self.last_update == None):
-            self.last_update = current_time
-            
-        
         print("\n")
         print(" _________________(Routing Table: Router {})___________________".format(self.self_id))
-        print("|________________________{}_____________________________|".format(current_time))
         print("|______________________________________________________________|")
         print("| Router ID | Next Hop | Cost |    Timeout   |  Garbage Timer  |")
-        print("|-----------|----------|------|--------------|-----------------|")
-        print("|{:^11}|{:^10}|{:^6}|{:^14}|{:^17}|".format(self.self_id, '-', '-', '-', '-'))
-         
-
-        time_elapsed = self.calculate_time_elapsed(current_time)
-        print("time elapsed: {}s".format(time_elapsed))
+        print("|-----------|----------|------|--------------|-----------------|")   
         
         for router_id, keys in self.table.items():
             metric = keys[0]
             next_hop = keys[1]
             timeout = keys[3]
             garbage_time = keys[4]
-            
-            if (self.timeout_started == True):
-                self.timeout = self.timeout - time_elapsed
-                if (self.timeout < 0):
-                    self.timeout = 0
-                print("|{:^11}|{:^10}|{:^6}|{:^14}|{:^17}|".format(router_id, next_hop, metric, self.timeout, 0))   
+            timeout_time= time.time() - self.timeout_timer_dict[router_id] 
+            if self.garbage_timer_dict.get(router_id):
+                garbage_timer_time = time.time() - self.garbage_timer_dict[router_id]
+                timeout_time = 0
             else:
-                time_elapsed = self.timeout            
-                print("|{:^11}|{:^10}|{:^6}|{:^14}|{:^17}|".format(router_id, next_hop, metric, str(time_elapsed), 0))  
+                garbage_timer_time = 0            
             
+            print("|{:^11}|{:^10}|{:^6}|{:^14.3f}|{:^17.3f}|".format(router_id, next_hop, metric, timeout_time, garbage_timer_time))   
         print("|___________|__________|______|______________|_________________|")
         print("\n")
         
-        self.last_update = current_time
+       
         
              
    
@@ -403,7 +384,7 @@ class Rip_routing():
             neb_port_num = values[1]
             self.sending_socket.sendto(packet, (LOCAL_HOST, neb_port_num)) 
         
-        self.print_routing_table()
+        
     
     
     
@@ -412,8 +393,7 @@ class Rip_routing():
         """ Sends packets to neigbours periodically. Done when a certain amount
         of time has passed. """
         self.send_packet()
-        #3+(random.randrange(0, 6)*random.randrange(-1, 2))
-        t = threading.Timer(3 + (random.randrange(0, 6) * random.randrange(-1, 2)), self.periodically_send_packets) 
+        t = threading.Timer(5 + 0.2 * (random.randrange(0, 5) * random.randrange(-1, 1)), self.periodically_send_packets) 
         t.start() 
         
                 
@@ -423,47 +403,10 @@ class Rip_routing():
         print("[" + current_time + "]: " + message) 
         
         
-    def get_time(self):
-        """ Returns the current time. """
-        current_time = time.strftime("%Hh:%Mm:%Ss")
-        return current_time
-                
+
         
         
-        
-    def calculate_time_elapsed(self, current_time):
-        
-        hour_before = int(self.last_update[:2])
-        minute_before = int(self.last_update[4:6])
-        second_before = int(self.last_update[8:-1])
-        
-        current_hour = int(current_time[:2])
-        current_minute = int(current_time[4:6])
-        current_second = int(current_time[8:-1])
-        
-        time_elapsed = 0
-        
-        if (current_hour == hour_before):
-            if (current_minute == minute_before):
-                if (current_second == second_before):
-                    time_elapsed = 0
-                else:
-                    second_passed = current_second - second_before
-                    time_elapsed = second_passed
-            else:
-                minute_passed = current_minute - minute_before
-                second_passed = (minute_passed * 60 - second_before) + current_second
-                time_elapsed = second_passed
-        else:
-            hour_passed = current_hour - hour_before
-            minute_passed = (hour_passed * 60 - minute_before) + current_minute
-            second_passed = (minute_passed * 60 - second_before) + current_second
-            time_elapsed = second_passed
-            
-        return time_elapsed
-                    
-            
-        
+    
         
         
         
