@@ -37,7 +37,6 @@ class ConfigureFile():
     def router_id_check(self, router_id):
         """ Checks if the router_id is within the supported parameter range. """
 
-
         if (router_id == ''):
             print_msg('Router has no ID.\n')
             raise Exception('Router ID is absent.\n')
