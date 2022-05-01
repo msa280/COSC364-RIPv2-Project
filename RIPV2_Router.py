@@ -1,11 +1,12 @@
 '''
                     COSC364 (RIPv2 Routing Protocol)
-               Authors: Haider Saeed (msa280), Drogo Shi
+             Authors: Haider Saeed (msa280), Drogo Shi (msh217)
                            Date: 07/03/2022
 
 Program Definition: Configures RIP routing protocol based on the specifications
                    outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
 '''
+
 
 import sys
 import configparser     # ConfigParser class which implements a basic configuration language
@@ -16,12 +17,15 @@ import threading    # use timer here so sys load will not affect the time
 import random
 from threading import Timer
 
+
+
 LOCAL_HOST = '127.0.0.1'
 
 
 
 class RIPV2_Router():
-    
+    """ This is the Router class for the RIPv2 Protocol."""
+     
 
     def __init__(self, router_id, neighbours, sending_socket):
         """ Initialises the router. """
@@ -33,6 +37,8 @@ class RIPV2_Router():
         self.garbage_time = 30
         self.timeout_timer_dict = {} #diction for record every entry's start time of timeout timer
         self.garbage_timer_dict = {} #diction for record every entry's start time of garbage timer
+        
+        
         
         
     def init_timer(self, dst_id):
@@ -57,6 +63,7 @@ class RIPV2_Router():
         self.timeout_timer_dict[router_id] = time.time()
         return threading_time
 
+
     
     
     def end_timeout(self, router_id):
@@ -75,12 +82,11 @@ class RIPV2_Router():
         
         
         
-        
-        
     def start_garbage_timer(self, router_id):
         '''Starts a garbage timer. '''
         self.table.get(router_id)[4].start()    
         self.garbage_timer_dict[router_id] = time.time()     
+
 
         
         
@@ -93,9 +99,7 @@ class RIPV2_Router():
         popped_router = self.table.pop(router_id, 0)
         self.give_update("Router {} has been deleted from the routing table.".format(router_id))
         
-       
     
-                
                 
                 
     def create_packet(self, send_to_neighbour_id):
@@ -162,6 +166,7 @@ class RIPV2_Router():
     
     
     
+    
     def check_rip_header(self, header):
         """ Checks if the RIP header is correct. If it is correct, it returns
         the id of the router it received from."""
@@ -176,6 +181,7 @@ class RIPV2_Router():
         else:
             return received_from_router_id   
            
+        
         
         
     def check_rip_entry(self, entry):
@@ -222,9 +228,6 @@ class RIPV2_Router():
         
     def receive_packet(self, packet):
         """ Process a received packet. """
-        
-        #self.wait(0.4)
-        
         self.give_update("Packet received.")
         
         # Check header and entries
@@ -236,17 +239,14 @@ class RIPV2_Router():
             print_msg("Incorrect packet header. Packet dropped!")
             return
         
-        #
-        for entry_start_index in range(4,len_packet,20): #every entry has 20byts
-            if not self.check_rip_entry(packet[entry_start_index:entry_start_index+20]):
+        # Packet checking
+        for entry_start_index in range(4, len_packet, 20): #every entry has 20byts
+            if not (self.check_rip_entry(packet[entry_start_index:entry_start_index+20])):
                 index_entry = (len_packet - 4) // 20
-                print_msg(f"\nWrong entry for index_entry: {index_entry}")
-                print_msg("\nDropped the packet!")
+                print_msg(f"Wrong entry for index_entry: {index_entry}")
+                print_msg("Dropped the packet!")
                 return         
-        #    
-            
-        # Packet checking ends.
-        
+       
         # If table doesn't have neighbour
         if (self.table.get(neb_id) == None):
             cost,_ = self.neighbours.get(neb_id)
@@ -259,7 +259,6 @@ class RIPV2_Router():
             
         # Stops furthur processing if only the header is received.
         if (len_packet == 4):
-
             return
         # End of neighbour processing
         
@@ -273,15 +272,10 @@ class RIPV2_Router():
         
         
         
-        
     
     
     def process_entry(self, entry, neb_id):
-        """Processing one entry so the table might be changed, more specific on page 27/28 """
-        
-        # Waits for a short time before beginning processing
-        #self.wait(0.4)
-    
+        """Processes one entry so the table might be changed."""
         router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
         entry_metric = int(entry[19])
         total_cost = min(16, self.neighbours.get(neb_id)[0] + entry_metric)
@@ -330,6 +324,7 @@ class RIPV2_Router():
         
         
         
+        
     def print_routing_table(self):
         """ Prints the routing table's of the router."""
         
@@ -344,8 +339,8 @@ class RIPV2_Router():
         router_id_list.sort()
         for router_id in router_id_list:
             metric, next_hop, flag, timeout, garbage = self.table.get(router_id)
-        
             timeout_time = time.time() - self.timeout_timer_dict[router_id] 
+            
             if (self.garbage_timer_dict.get(router_id)):
                 garbage_timer_time = time.time() - self.garbage_timer_dict[router_id]
                 timeout_time = 0
@@ -359,6 +354,7 @@ class RIPV2_Router():
         
    
    
+   
     def send_packet(self):
         """ Creates a packet for each neigbour and sends it to the neighbour. """
         self.give_update("Sending Packet.")
@@ -370,7 +366,7 @@ class RIPV2_Router():
         
         
         
-
+        
     def periodically_send_packets(self):
         """ Sends packets to neigbours periodically. Done when a certain 
         random amount of time has passed. """
@@ -380,6 +376,7 @@ class RIPV2_Router():
         self.print_routing_table()
         
         
+         
                 
     def give_update(self, message):
         """ Gives the update message and the time at which it was sent. """
@@ -387,12 +384,7 @@ class RIPV2_Router():
         print("[" + current_time + "]: " + message) 
         
         
-        
-    def wait(self, seconds):
-        """ This function temporarily runs a short timeout timer so that system
-        load balancing can occur. """
-        time.sleep(seconds)
-
+    
         
         
                 

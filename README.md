@@ -1,6 +1,6 @@
 
                      COSC364 (RIPv2 Routing Protocol)
-                Authors: Haider Saeed (msa280), Drogo Shi
+             Authors: Haider Saeed (msa280), Drogo Shi (msh217)
                            Date: 07/03/2022
 
 

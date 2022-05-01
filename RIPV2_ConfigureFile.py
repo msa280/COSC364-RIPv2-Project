@@ -1,8 +1,8 @@
 '''
-                    COSC364 (RIPv2 Routing Protocol)
-               Authors: Haider Saeed (msa280), Drogo Shi
-                           Date: 07/03/2022
-
+                     COSC364 (RIPv2 Routing Protocol)
+             Authors: Haider Saeed (msa280), Drogo Shi (msh217)
+                            Date: 07/03/2022
+                           
 Program Definition: Configures RIP routing protocol based on the specifications
                    outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
 '''
@@ -26,12 +26,15 @@ class ConfigureFile():
     using filename. It then tries to create and bind to the sockets. '''
 
 
+
     def __init__(self, config_file):
         """ Initiates the configuration file. """
         
         self.config_file = config_file
         self.router_info = {} #i think it's better un pack this to self.input and self.router_id
         self.neighbor = {}  #I add this new more useable so the inf['outputs'] will not needed
+
+
 
 
     def router_id_check(self, router_id):
@@ -50,6 +53,8 @@ class ConfigureFile():
                 raise Exception('Router ID is greater than 64000.\n')
 
 
+
+
     def cost_check(self, cost):
         """ Checks if the cost is within the supported parameter range. """
         
@@ -61,6 +66,8 @@ class ConfigureFile():
         else:
             print_msg('Output Router cost check failed.\n')
             raise Exception('Router cost is not valid.\n')
+
+
 
 
     def port_check(self, port):
@@ -79,6 +86,8 @@ class ConfigureFile():
                 raise Exception('Router port is greater than 64000.\n')       
 
 
+
+
     def get_router_id(self, config):
         """ Gets the router id from the config file of the router after 
         performing sanity checks. """
@@ -91,6 +100,8 @@ class ConfigureFile():
 
         if (self.router_id_check(router_id)):
             self.router_info['router_id'] = int(router_id)
+
+
 
 
     def get_output_ports(self, config):
@@ -168,6 +179,8 @@ class ConfigureFile():
                 raise Exception('Error - Output Port in Input Port\n') 
 
 
+
+
     def configure_inputs(self, config):
         """ Gets the input ports for the router and for each port opens a UDP
         socket and attempts to bind to it. """
@@ -215,6 +228,8 @@ class ConfigureFile():
                 ports.append(port)
 
 
+
+
     def read_and_process_file(self):
         """ Starts processing and reading the configuration file of the router
         while performing sanity checks. """
@@ -230,6 +245,7 @@ class ConfigureFile():
 
         print_msg('Success - All parameters passed the sanity checks')
         self.configure_inputs(config)
+
 
 
 
