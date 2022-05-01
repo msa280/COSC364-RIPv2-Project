@@ -1,0 +1,67 @@
+
+Copy and paste these tests into the bash command line for quick testing!
+
+
+# Tests fields without any parameters.
+
+python3 RIPv2_Daemon.py Tests/config_test1.txt
+
+python3 RIPv2_Daemon.py Tests/config_test2.txt
+
+python3 RIPv2_Daemon.py Tests/config_test3.txt
+
+
+# Tests missing mandatory fields.
+
+python3 RIPv2_Daemon.py Tests/format_test1.txt
+
+python3 RIPv2_Daemon.py Tests/format_test2.txt
+
+python3 RIPv2_Daemon.py Tests/format_test3.txt
+
+
+# Tests router id of the running router
+
+python3 RIPv2_Daemon.py Tests/id_test1.txt
+
+python3 RIPv2_Daemon.py Tests/id_test2.txt
+
+
+# Tests the input ports of the router.
+
+python3 RIPv2_Daemon.py Tests/ip_test1.txt
+
+python3 RIPv2_Daemon.py Tests/ip_test2.txt
+
+python3 RIPv2_Daemon.py Tests/ip_test3.txt
+
+python3 RIPv2_Daemon.py Tests/ip_test4.txt
+
+
+# Tests the output ports of the router.
+
+python3 RIPv2_Daemon.py Tests/op_test1.txt
+
+python3 RIPv2_Daemon.py Tests/op_test2.txt
+
+python3 RIPv2_Daemon.py Tests/op_test3.txt
+
+python3 RIPv2_Daemon.py Tests/op_test4.txt
+
+python3 RIPv2_Daemon.py Tests/op_test5.txt
+
+python3 RIPv2_Daemon.py Tests/op_test6.txt
+
+python3 RIPv2_Daemon.py Tests/op_test7.txt
+
+python3 RIPv2_Daemon.py Tests/op_test8.txt
+
+
+
+
+
+
+
+
+
+
