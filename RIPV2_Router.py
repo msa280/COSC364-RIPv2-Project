@@ -223,7 +223,7 @@ class RIPV2_Router():
     def receive_packet(self, packet):
         """ Process a received packet. """
         
-        self.wait(0.4)
+        #self.wait(0.4)
         
         self.give_update("Packet received.")
         
@@ -251,9 +251,11 @@ class RIPV2_Router():
         if (self.table.get(neb_id) == None):
             cost,_ = self.neighbours.get(neb_id)
             self.table[neb_id] = [cost, neb_id, False, self.start_timeout(neb_id), threading.Timer(self.garbage_time, self.delete_router, (neb_id,))]
-        # Else, reinitialize the timer
+        # Else, reinitialize the timer and cost
         else:
+            cost,_ = self.neighbours.get(neb_id)
             self.init_timer(neb_id)
+            self.table[neb_id][0] = cost
             
         # Stops furthur processing if only the header is received.
         if (len_packet == 4):
@@ -278,7 +280,7 @@ class RIPV2_Router():
         """Processing one entry so the table might be changed, more specific on page 27/28 """
         
         # Waits for a short time before beginning processing
-        self.wait(0.4)
+        #self.wait(0.4)
     
         router_id = (int(entry[6] & 0xFF)) + int((entry[7] << 8))    
         entry_metric = int(entry[19])
@@ -331,7 +333,7 @@ class RIPV2_Router():
     def print_routing_table(self):
         """ Prints the routing table's of the router."""
         
-        self.wait(0.4)
+        #self.wait(0.4)
         print("\n")
         print(" ________________________[Router {}]___________________________".format(self.self_id))
         print("|______________________________________________________________|")
@@ -360,12 +362,12 @@ class RIPV2_Router():
     def send_packet(self):
         """ Creates a packet for each neigbour and sends it to the neighbour. """
         self.give_update("Sending Packet.")
-        self.wait(0.4)
+        #self.wait(0.4)
         for neighbor_id, values in self.neighbours.items():
             packet = self.create_packet(neighbor_id)
             neb_port_num = values[1]
             self.sending_socket.sendto(packet, (LOCAL_HOST, neb_port_num)) 
-        self.print_routing_table()
+        
         
         
 
@@ -375,6 +377,7 @@ class RIPV2_Router():
         self.send_packet()
         t = threading.Timer(5 + 0.2 * (random.randrange(0, 6) * random.randrange(-1, 1)), self.periodically_send_packets)
         t.start() 
+        self.print_routing_table()
         
         
                 
