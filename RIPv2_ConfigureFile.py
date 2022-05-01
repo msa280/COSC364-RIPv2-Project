@@ -2,9 +2,11 @@
                      COSC364 (RIPv2 Routing Protocol)
              Authors: Haider Saeed (msa280), Drogo Shi (msh217)
                             Date: 07/03/2022
+                    Filename: RIPv2_ConfigureFile.py
                            
-Program Definition: Configures RIP routing protocol based on the specifications
-                   outlined in RIP Version 2 (RFC2453). (Section 4 not included) 
+Program Definition: Reads the configuration files of and router and prints out 
+                    any error messages. Otherwise, it creates and binds to 
+                    sockets. 
 '''
 
 import sys
